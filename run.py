@@ -37,17 +37,30 @@ class MainWindow:
         print("clicked")
         pickedFile = askopenfilename(initialdir="/", title="Select file",
                                      filetypes=(("jpg files", "*.jpg"), ("all files", "*.*")))
-
+        if pickedFile == "":
+            self.resultTxt.config(text="Image Not Selected")
+            return
         original = cv2.imread(pickedFile)
-        cv2.imwrite("working/selectedImg.jpg", original)
-        self.preProcess("working/selectedImg.jpg", "working/preProcessed.jpg")
+        writeSuccess = cv2.imwrite("working/selectedImg.jpg", original)
+        if writeSuccess is False:
+            self.resultTxt.config(text="Could Not Write Selected Image.")
+            return
+
+        processResult = self.preProcess("working/selectedImg.jpg", "working/preProcessed.jpg")
+        if processResult == "noFace":
+            self.resultTxt.config(text="Could Not Process Image. No Face Found")
+            return
+        if processResult == "writeProcessedFail":
+            self.resultTxt.config(text="Could Not Save Processed Image")
+            return
+
 
         self.photo = Image.open("working/preProcessed.jpg")
         self.pickedPhoto = ImageTk.PhotoImage(self.photo)
         self.imgDisplayLbl.configure(image=self.pickedPhoto)
 
         # Now run it
-        pred ,conf = self.run_recognizer()
+        pred, conf = self.run_recognizer()
 
         # ============================
         self.resultTxt.config(text=str(pred) + " " + str(conf))
@@ -61,7 +74,6 @@ class MainWindow:
         # gray scale
         gray = cv2.cvtColor(bfil, cv2.COLOR_BGR2GRAY)
         # detect face
-        # Detect face using 4 different classifiers
         face = faceDet.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=10, minSize=(5, 5),
                                         flags=cv2.CASCADE_SCALE_IMAGE)
         face_two = faceDet_two.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=10, minSize=(5, 5),
@@ -73,22 +85,33 @@ class MainWindow:
         # Go over detected faces, stop at first detected face, return empty if no face.
         if len(face) == 1:
             facefeatures = face
+            print("face Found using 1st filter")
         elif len(face_two) == 1:
             facefeatures = face_two
+            print("face Found using 2nd filter")
         elif len(face_three) == 1:
             facefeatures = face_three
+            print("face Found using 3rd filter")
         elif len(face_four) == 1:
             facefeatures = face_four
+            print("face Found using final filter")
         else:
             facefeatures = ""
+            print("Could Not Find Face in Image")
+            self.resultTxt.config(text="No Face Found In Image")
+            return "noFace"
         # focus on face
         for (x, y, w, h) in facefeatures:  # get coordinates and size of rectangle containing face
             gray = gray[y:y + h, x:x + w]  # Cut the frame to size
             try:
                 out = cv2.resize(gray, (350, 350))  # Resize face so all images have same size
-                cv2.imwrite(outputImgPath, out)  # Write image
+                preProcessSaved = cv2.imwrite(outputImgPath, out)  # Write image
+                if preProcessSaved is False:
+                    self.resultTxt.config(text="Could Not Write Processed Image.")
+                    return "writeProcessedFail"
             except:
                 pass  # If error, pass file
+                print("Error, Passing File")
 
     def get_files(self, emotion):  # Define function to get file list, randomly shuffle it and split 80/20
         files = glob.glob("dataset\\%s\\*" % emotion)
@@ -124,7 +147,7 @@ class MainWindow:
 
         pred, conf = fishface.predict(prediction_gray)
         print("pred  " + str(pred))
-        print("emotion inded   " + emotions[pred])
+        print("emotion identified   " + emotions[pred])
         print("conf   " + str(conf))
         prediction = emotions[pred]
         probability = conf
