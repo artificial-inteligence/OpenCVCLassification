@@ -12,13 +12,15 @@ faceDet_three = cv2.CascadeClassifier("HAARFilters/haarcascade_frontalface_alt.x
 faceDet_four = cv2.CascadeClassifier("HAARFilters/haarcascade_frontalface_alt_tree.xml")
 emotions = ["anger", "disgust", "fear", "happy", "sadness", "surprise"]  # Emotion list
 fishface = cv2.face.FisherFaceRecognizer_create()  # Initialize fisher face classifier
-defaultImage = "working/logo.jpg"
+defaultImageLocation = "working/logo.jpg"
+selectedImageLocation = "working/selectedImg.jpg"
+preProcessedImageLocation = "working/preProcessed.jpg"
 applicationTitle = "Emotion Recognition Helper"
 
 class MainWindow:
     def __init__(self, master):
         self.normalPadding = 5
-        self.photo = Image.open(defaultImage)
+        self.photo = Image.open(defaultImageLocation)
         self.pickedPhoto = ImageTk.PhotoImage(self.photo)
 
         self.getImageBtn = Button(master, text="Get Image", bg="red", fg="white", padx=self.normalPadding, pady=self.normalPadding,command=self.selectImage)
@@ -39,33 +41,32 @@ class MainWindow:
                                      filetypes=(("jpg files", "*.jpg"), ("all files", "*.*")))
         if pickedFile == "":
             self.resultTxt.config(text="Image Not Selected", bg="red")
-            self.updateImage(defaultImage)
+            self.updateImage(defaultImageLocation)
             return
         original = cv2.imread(pickedFile)
-        writeSuccess = cv2.imwrite("working/selectedImg.jpg", original)
+        writeSuccess = cv2.imwrite(selectedImageLocation, original)
         if writeSuccess is False:
             self.resultTxt.config(text="Could Not Write Selected Image.", bg="red")
-            self.updateImage(defaultImage)
+            self.updateImage(defaultImageLocation)
             return
 
-        processResult = self.preProcess("working/selectedImg.jpg", "working/preProcessed.jpg")
+        processResult = self.preProcess(selectedImageLocation, preProcessedImageLocation)
         if processResult == "noFace":
             self.resultTxt.config(text="Could Not Process Image. No Face Found", bg="red")
-            self.updateImage(defaultImage)
+            self.updateImage(defaultImageLocation)
             return
         if processResult == "writeProcessedFail":
             self.resultTxt.config(text="Could Not Save Processed Image", bg="red")
-            self.updateImage(defaultImage)
+            self.updateImage(defaultImageLocation)
             return
 
-        self.updateImage("working/preProcessed.jpg")
+        self.updateImage(preProcessedImageLocation)
 
         # Now run it
         pred, conf = self.run_recognizer()
 
         # ============================
         self.resultTxt.config(text=str(pred) + " " + str(conf), bg="green")
-
 
         # ============================
 
@@ -131,14 +132,14 @@ class MainWindow:
 
         for emotion in emotions:
             training = self.get_files(emotion)
-            # Append data to training and prediction list, and generate labels 0-7
+            # Append data to training and prediction list with labels
             for item in training:
-                image = cv2.imread(item)  # open image
-                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # convert to gray scale
-                training_data.append(gray)  # append image array to training data list
+                image = cv2.imread(item)
+                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                training_data.append(gray)
                 training_labels.append(emotions.index(emotion))
 
-                prediction_image = cv2.imread("working/preProcessed.jpg")
+                prediction_image = cv2.imread(preProcessedImageLocation)
                 prediction_gray = cv2.cvtColor(prediction_image, cv2.COLOR_BGR2GRAY)
 
         return training_data, training_labels, prediction_gray
