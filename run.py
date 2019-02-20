@@ -4,7 +4,6 @@ import cv2
 from PIL import Image, ImageTk
 import cv2.face
 import glob
-import random
 import numpy as np
 
 faceDet = cv2.CascadeClassifier("HAARFilters/haarcascade_frontalface_default.xml")
@@ -13,18 +12,19 @@ faceDet_three = cv2.CascadeClassifier("HAARFilters/haarcascade_frontalface_alt.x
 faceDet_four = cv2.CascadeClassifier("HAARFilters/haarcascade_frontalface_alt_tree.xml")
 emotions = ["anger", "disgust", "fear", "happy", "sadness", "surprise"]  # Emotion list
 fishface = cv2.face.FisherFaceRecognizer_create()  # Initialize fisher face classifier
-data = {}
+defaultImage = "working/logo.jpg"
+applicationTitle = "Emotion Recognition Helper"
 
 class MainWindow:
     def __init__(self, master):
         self.normalPadding = 5
-        self.photo = Image.open("working/prism.jpg")
+        self.photo = Image.open(defaultImage)
         self.pickedPhoto = ImageTk.PhotoImage(self.photo)
 
         self.getImageBtn = Button(master, text="Get Image", bg="red", fg="white", padx=self.normalPadding, pady=self.normalPadding,command=self.selectImage)
         self.getImageBtn.grid(row=1, column=0)
 
-        self.appTitleTxt = Label(master, text="Application Title", bg="green", fg="black", padx=self.normalPadding,pady=self.normalPadding)
+        self.appTitleTxt = Label(master, text=applicationTitle, bg="green", fg="black", padx=self.normalPadding,pady=self.normalPadding)
         self.appTitleTxt.grid(row=0, columnspan=2, sticky=N + E + W)
 
         self.imgDisplayLbl = Label(master, image=self.pickedPhoto, width=350,height=350)
@@ -39,25 +39,26 @@ class MainWindow:
                                      filetypes=(("jpg files", "*.jpg"), ("all files", "*.*")))
         if pickedFile == "":
             self.resultTxt.config(text="Image Not Selected")
+            self.updateImage(defaultImage)
             return
         original = cv2.imread(pickedFile)
         writeSuccess = cv2.imwrite("working/selectedImg.jpg", original)
         if writeSuccess is False:
             self.resultTxt.config(text="Could Not Write Selected Image.")
+            self.updateImage(defaultImage)
             return
 
         processResult = self.preProcess("working/selectedImg.jpg", "working/preProcessed.jpg")
         if processResult == "noFace":
             self.resultTxt.config(text="Could Not Process Image. No Face Found")
+            self.updateImage(defaultImage)
             return
         if processResult == "writeProcessedFail":
             self.resultTxt.config(text="Could Not Save Processed Image")
+            self.updateImage(defaultImage)
             return
 
-
-        self.photo = Image.open("working/preProcessed.jpg")
-        self.pickedPhoto = ImageTk.PhotoImage(self.photo)
-        self.imgDisplayLbl.configure(image=self.pickedPhoto)
+        self.updateImage("working/preProcessed.jpg")
 
         # Now run it
         pred, conf = self.run_recognizer()
@@ -67,6 +68,12 @@ class MainWindow:
 
 
         # ============================
+
+    def updateImage(self,imageLocation):
+        self.photo = Image.open(imageLocation)
+        self.pickedPhoto = ImageTk.PhotoImage(self.photo)
+        self.imgDisplayLbl.configure(image=self.pickedPhoto)
+
     def preProcess(self, inputImgPath, outputImgPath):
         toProcess = cv2.imread(inputImgPath)
         # filter
@@ -113,7 +120,7 @@ class MainWindow:
                 pass  # If error, pass file
                 print("Error, Passing File")
 
-    def get_files(self, emotion):  # Define function to get file list, randomly shuffle it and split 80/20
+    def get_files(self, emotion):
         files = glob.glob("dataset\\%s\\*" % emotion)
         training = files[:int(len(files) * 1)]
         return training
@@ -122,7 +129,6 @@ class MainWindow:
         training_data = []
         training_labels = []
 
-        prediction_labels = []
         for emotion in emotions:
             training = self.get_files(emotion)
             # Append data to training and prediction list, and generate labels 0-7
@@ -133,8 +139,7 @@ class MainWindow:
                 training_labels.append(emotions.index(emotion))
 
                 prediction_image = cv2.imread("working/preProcessed.jpg")
-                prediction_filter = cv2.bilateralFilter(prediction_image, 9, 75, 75)
-                prediction_gray = cv2.cvtColor(prediction_filter, cv2.COLOR_BGR2GRAY)
+                prediction_gray = cv2.cvtColor(prediction_image, cv2.COLOR_BGR2GRAY)
 
         return training_data, training_labels, prediction_gray
 
