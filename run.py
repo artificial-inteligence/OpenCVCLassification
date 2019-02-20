@@ -38,23 +38,23 @@ class MainWindow:
         pickedFile = askopenfilename(initialdir="/", title="Select file",
                                      filetypes=(("jpg files", "*.jpg"), ("all files", "*.*")))
         if pickedFile == "":
-            self.resultTxt.config(text="Image Not Selected")
+            self.resultTxt.config(text="Image Not Selected", bg="red")
             self.updateImage(defaultImage)
             return
         original = cv2.imread(pickedFile)
         writeSuccess = cv2.imwrite("working/selectedImg.jpg", original)
         if writeSuccess is False:
-            self.resultTxt.config(text="Could Not Write Selected Image.")
+            self.resultTxt.config(text="Could Not Write Selected Image.", bg="red")
             self.updateImage(defaultImage)
             return
 
         processResult = self.preProcess("working/selectedImg.jpg", "working/preProcessed.jpg")
         if processResult == "noFace":
-            self.resultTxt.config(text="Could Not Process Image. No Face Found")
+            self.resultTxt.config(text="Could Not Process Image. No Face Found", bg="red")
             self.updateImage(defaultImage)
             return
         if processResult == "writeProcessedFail":
-            self.resultTxt.config(text="Could Not Save Processed Image")
+            self.resultTxt.config(text="Could Not Save Processed Image", bg="red")
             self.updateImage(defaultImage)
             return
 
@@ -64,7 +64,7 @@ class MainWindow:
         pred, conf = self.run_recognizer()
 
         # ============================
-        self.resultTxt.config(text=str(pred) + " " + str(conf))
+        self.resultTxt.config(text=str(pred) + " " + str(conf), bg="green")
 
 
         # ============================
