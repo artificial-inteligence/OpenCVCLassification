@@ -12,9 +12,14 @@ faceDet_three = cv2.CascadeClassifier("HAARFilters/haarcascade_frontalface_alt.x
 faceDet_four = cv2.CascadeClassifier("HAARFilters/haarcascade_frontalface_alt_tree.xml")
 emotions = ["anger", "disgust", "fear", "happy", "sadness", "surprise"]  # Emotion list
 # number of components  0 is best, the default.   threashold = 1000 how big a distance you can have between results
-# and predictions before it returns -1 (fail) setting it to 1000 gives us 0 =100% confidence X = 0% confidence.
+# and predictions before it returns -1 (fail) setting it to 1000 gives us 0 =100% confidence 1000 = 0% confidence.
+# need to run labeled tests to figure out what a reasonable threashold is for our dataset.
 # accuracy can be predicted from there
-fishface = cv2.face.FisherFaceRecognizer_create(0, 1300)  # Initialize fisher face classifier
+# Labeled Tests Return values
+# 61.96%    == 530 Distance      1% = 530/61.96 = 8.6   0% = 8.6*100 = 869
+# 58.4%     == 501 Distance      1% = 501/58.4  = 8.6
+fishFaceThreshold = 869
+fishface = cv2.face.FisherFaceRecognizer_create(0, fishFaceThreshold)  # Initialize fisher face classifier
 defaultImageLocation = "working/logo.jpg"
 selectedImageLocation = "working/selectedImg.jpg"
 preProcessedImageLocation = "working/preProcessed.jpg"

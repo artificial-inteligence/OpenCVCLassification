@@ -46,24 +46,32 @@ def run_recognizer():
     cnt = 0
     correct = 0
     incorrect = 0
+    sum_conf = 0
     for image in prediction_data:
         pred, conf = fishface.predict(image)
         if pred == prediction_labels[cnt]:
             correct += 1
             cnt += 1
+            sum_conf += conf
             print("pred  " + str(pred))
             print("emotion    " + emotions[pred])
             print("conf   " + str(conf))
-            print("it acutally was :  " + emotions[prediction_labels[cnt]])
+
 
         else:
             incorrect += 1
+            sum_conf += conf
             cnt += 1
-    return ((100*correct)/(correct + incorrect))
+    print("average conf = " + str(sum_conf) + "/" + str(cnt) + " = " + str((sum_conf/cnt)))
+
+    return ((100*correct)/(correct + incorrect),(sum_conf/cnt))
 # Now run it
 metascore = []
+distanceMeta = []
 for i in range(0,10):
-    correct = run_recognizer()
+    correct,avgDistance = run_recognizer()
     print("got", correct, "percent correct!")
     metascore.append(correct)
+    distanceMeta.append(avgDistance)
 print("\n\nend score:", np.mean(metascore), "percent correct!")
+print("\n\nend score (Distance):", np.mean(distanceMeta), "average Distance for above percentage")
