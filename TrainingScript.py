@@ -8,7 +8,7 @@ fishface = cv2.face.FisherFaceRecognizer_create()  # Initialize fisher face clas
 data = {}
 
 
-def get_files(emotion):  # Define function to get file list, randomly shuffle it and split 80/20
+def get_training_files(emotion):  # Define function to get file list, randomly shuffle it and split 80/20
     files = glob.glob("dataset\\%s\\*" %emotion)
     random.shuffle(files)
     training = files[:int(len(files)*0.8)]  # get first 80% of file list
@@ -16,13 +16,13 @@ def get_files(emotion):  # Define function to get file list, randomly shuffle it
     return training, prediction
 
 
-def make_sets():
+def make_test_sets():
     training_data = []
     training_labels = []
     prediction_data = []
     prediction_labels = []
     for emotion in emotions:
-        training, prediction = get_files(emotion)
+        training, prediction = get_training_files(emotion)
         # Append data to training and prediction list, and generate labels 0-7
         for item in training:
             image = cv2.imread(item)  # open image
@@ -37,8 +37,8 @@ def make_sets():
     return training_data, training_labels, prediction_data, prediction_labels
 
 
-def run_recognizer():
-    training_data, training_labels, prediction_data, prediction_labels = make_sets()
+def run_test_recognizer():
+    training_data, training_labels, prediction_data, prediction_labels = make_test_sets()
     print("training fisher face classifier")
     print("size of training set is:", len(training_labels), "images")
     fishface.train(training_data, np.asarray(training_labels))
@@ -69,7 +69,7 @@ def run_recognizer():
 metascore = []
 distanceMeta = []
 for i in range(0,10):
-    correct,avgDistance = run_recognizer()
+    correct, avgDistance = run_test_recognizer()
     print("got", correct, "percent correct!")
     metascore.append(correct)
     distanceMeta.append(avgDistance)

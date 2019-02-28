@@ -1,3 +1,4 @@
+import random
 from tkinter import *
 from tkinter.filedialog import askopenfilename
 import cv2
@@ -27,21 +28,70 @@ applicationTitle = "Emotion Recognition Helper"
 
 class MainWindow:
     def __init__(self, master):
+        self.metascore = []
+        self.distanceMeta = []
         self.normalPadding = 5
         self.photo = Image.open(defaultImageLocation)
         self.pickedPhoto = ImageTk.PhotoImage(self.photo)
 
         self.getImageBtn = Button(master, text="Get Image", bg="red", fg="white", padx=self.normalPadding, pady=self.normalPadding,command=self.selectImage)
-        self.getImageBtn.grid(row=1, column=0)
+        self.getImageBtn.grid(row=1, column=0, sticky=E)
+        self.getImageBtn = Button(master, text="Test Me", bg="blue", fg="white", padx=self.normalPadding, pady=self.normalPadding, command=self.testAccuracy)
+        self.getImageBtn.grid(row=1, column=0, sticky=W, padx=10)
 
         self.appTitleTxt = Label(master, text=applicationTitle, bg="green", fg="black", padx=self.normalPadding,pady=self.normalPadding)
         self.appTitleTxt.grid(row=0, columnspan=2, sticky=N + E + W)
 
-        self.imgDisplayLbl = Label(master, image=self.pickedPhoto, width=350,height=350)
+        self.imgDisplayLbl = Label(master, image=self.pickedPhoto, width=350, height=350)
         self.imgDisplayLbl.grid(row=1,column=1, sticky=N+E+S+W)
 
         self.resultTxt = Label(root, text="Confidence: XY%", bg="green", fg="black", padx=self.normalPadding, pady=self.normalPadding,width=100)
         self.resultTxt.grid(columnspan=2, row=2, sticky=E + W)
+
+    def make_test_sets(self):
+        training_data = []
+        training_labels = []
+        prediction_data = []
+        prediction_labels = []
+        for emotion in emotions:
+            training, prediction = self.get_training_files(emotion)
+            # Append data to training and prediction list, and generate labels 0-7
+            for item in training:
+                image = cv2.imread(item)  # open image
+                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # convert to gray scale
+                training_data.append(gray)  # append image array to training data list
+                training_labels.append(emotions.index(emotion))
+            for item in prediction:  # repeat above process for prediction set
+                image = cv2.imread(item)
+                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                prediction_data.append(gray)
+                prediction_labels.append(emotions.index(emotion))
+        return training_data, training_labels, prediction_data, prediction_labels
+
+    def run_test_recognizer(self):
+        training_data, training_labels, prediction_data, prediction_labels = self.make_test_sets()
+        print("size of training set is:", len(training_labels), "images")
+        fishface.train(training_data, np.asarray(training_labels))
+        cnt = 0
+        correct = 0
+        incorrect = 0
+        for image in prediction_data:
+            pred, conf = fishface.predict(image)
+            if pred == prediction_labels[cnt]:
+                correct += 1
+                cnt += 1
+            else:
+                incorrect += 1
+                cnt += 1
+        return ((100 * correct) / (correct + incorrect))
+
+    def testAccuracy(self):
+        for i in range(0, 10):
+            correct = self.run_test_recognizer()
+            print("got", correct, "percent correct!")
+            self.metascore.append(correct)
+        print("\n\nend score:", np.mean(self.metascore), "percent correct!")
+        self.resultTxt.config(text=str(np.mean(self.metascore)) + " percent correct!", bg="gold")
 
     def selectImage(self):
         print("clicked")
@@ -133,6 +183,13 @@ class MainWindow:
         files = glob.glob("dataset\\%s\\*" % emotion)
         training = files[:int(len(files) * 1)]
         return training
+
+    def get_training_files(self, emotion):  # Define function to get file list, randomly shuffle it and split 80/20
+        files = glob.glob("dataset\\%s\\*" % emotion)
+        random.shuffle(files)
+        training = files[:int(len(files) * 0.8)]  # get first 80% of file list
+        prediction = files[-int(len(files) * 0.2):]  # get last 20% of file list
+        return training, prediction
 
     def make_sets(self):
         training_data = []
