@@ -124,7 +124,9 @@ class MainWindow:
         pred, conf = self.run_recognizer()
 
         # ============================
-        self.resultTxt.config(text=str(pred) + " " + str(conf), bg="green")
+        test = conf / fishFaceThreshold
+        percentage = round((test * 100), 2)
+        self.resultTxt.config(text=str(pred) + " " + str(percentage) + "%", bg="green")
 
         # ============================
 
