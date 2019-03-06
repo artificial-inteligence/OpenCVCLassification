@@ -1,3 +1,4 @@
+import os
 import random
 from tkinter import *
 from tkinter.filedialog import askopenfilename
@@ -25,6 +26,7 @@ defaultImageLocation = "working/logo.jpg"
 selectedImageLocation = "working/selectedImg.jpg"
 preProcessedImageLocation = "working/preProcessed.jpg"
 applicationTitle = "Emotion Recognition Helper"
+trainedModel = "working/trainedFisherFace.yml"
 
 class MainWindow:
     def __init__(self, master):
@@ -38,6 +40,9 @@ class MainWindow:
         self.getImageBtn.grid(row=1, column=0, sticky=E)
         self.getImageBtn = Button(master, text="Test Me", bg="blue", fg="white", padx=self.normalPadding, pady=self.normalPadding, command=self.testAccuracy)
         self.getImageBtn.grid(row=1, column=0, sticky=W, padx=10)
+
+        self.getImageBtn = Button(master, text="Update Training", bg="green", fg="white", padx=self.normalPadding, pady=self.normalPadding, command=self.saveTraining)
+        self.getImageBtn.grid(row=1, column=0, padx=10)
 
         self.appTitleTxt = Label(master, text=applicationTitle, bg="green", fg="black", padx=self.normalPadding,pady=self.normalPadding)
         self.appTitleTxt.grid(row=0, columnspan=2, sticky=N + E + W)
@@ -121,10 +126,11 @@ class MainWindow:
         self.updateImage(preProcessedImageLocation)
 
         # Now run it
-        pred, conf = self.run_recognizer()
+        pred, distance = self.run_recognizer()
 
         # ============================
-        test = conf / fishFaceThreshold
+        print(distance)
+        test = distance / fishFaceThreshold
         percentage = round((test * 100), 2)
         self.resultTxt.config(text=str(pred) + " " + str(percentage) + "%", bg="green")
 
@@ -193,7 +199,28 @@ class MainWindow:
         prediction = files[-int(len(files) * 0.2):]  # get last 20% of file list
         return training, prediction
 
-    def make_sets(self):
+    def run_recognizer(self):
+
+        prediction_image = cv2.imread(preProcessedImageLocation)
+        prediction_gray = cv2.cvtColor(prediction_image, cv2.COLOR_BGR2GRAY)
+        if os.path.isfile(trainedModel):
+            fishface.read(trainedModel)
+        else:
+            print("yml file not found. Training the FisherFace classifier")
+            self.saveTraining()
+            print("Saving new Training yml file")
+            fishface.read(trainedModel)
+
+        print("predicting classification..")
+        pred, conf = fishface.predict(prediction_gray)
+        print("pred  " + str(pred))
+        print("emotion identified   " + emotions[pred])
+        print("conf   " + str(conf))
+        prediction = emotions[pred]
+        probability = conf
+        return prediction, probability
+
+    def saveTraining(self):
         training_data = []
         training_labels = []
 
@@ -205,27 +232,8 @@ class MainWindow:
                 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                 training_data.append(gray)
                 training_labels.append(emotions.index(emotion))
-
-                prediction_image = cv2.imread(preProcessedImageLocation)
-                prediction_gray = cv2.cvtColor(prediction_image, cv2.COLOR_BGR2GRAY)
-
-        return training_data, training_labels, prediction_gray
-
-    def run_recognizer(self):
-        training_data, training_labels, prediction_gray = self.make_sets()
-        print("training fisher face classifier")
-        print("size of training set is:", len(training_labels), "images")
         fishface.train(training_data, np.asarray(training_labels))
-        print("predicting classification set")
-
-        pred, conf = fishface.predict(prediction_gray)
-        print("pred  " + str(pred))
-        print("emotion identified   " + emotions[pred])
-        print("conf   " + str(conf))
-        prediction = emotions[pred]
-        probability = conf
-        return prediction, probability
-
+        fishface.save(trainedModel)
 
 
 root = Tk()
