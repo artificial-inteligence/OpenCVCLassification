@@ -71,4 +71,4 @@ source_emotion/
 sorted_set/
 dataset/
 working/*
-*.iml
+.idea/**.iml
