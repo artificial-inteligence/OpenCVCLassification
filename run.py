@@ -130,6 +130,22 @@ class MainWindow:
 
         # ============================
         print(distance)
+        # 0 distance == 100% (perfect match with trained recognizers idea of mood)
+        # distance = fisherFaceThreshold = 0% (I'ts as far away from the trained models idea of a mood as possible)
+
+        # ===
+        # could not identify mood
+        if pred == -1:
+            # distance is maximum as we have no idea
+            distance = fishFaceThreshold
+        if distance > fishFaceThreshold:
+            distance = fishFaceThreshold
+        # flip it the normal way around for calculating averages:
+        # so if dist = 0 distance = fisherFaceThreshold (100%)
+        # # , if distance  = fisherFaceThreshold distance = 0 (0%)
+        distance = fishFaceThreshold - distance
+
+        # ===
         test = distance / fishFaceThreshold
         percentage = round((test * 100), 2)
         self.resultTxt.config(text=str(pred) + " " + str(percentage) + "%", bg="green")
