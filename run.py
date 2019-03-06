@@ -156,6 +156,16 @@ class MainWindow:
                                                     flags=cv2.CASCADE_SCALE_IMAGE)
         face_four = faceDet_four.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=10, minSize=(5, 5),
                                                   flags=cv2.CASCADE_SCALE_IMAGE)
+
+        face_one_one = faceDet.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(5, 5),
+                                        flags=cv2.CASCADE_SCALE_IMAGE)
+        face_two_one = faceDet_two.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(5, 5),
+                                                flags=cv2.CASCADE_SCALE_IMAGE)
+        face_three_one = faceDet_three.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(5, 5),
+                                                    flags=cv2.CASCADE_SCALE_IMAGE)
+        face_four_one = faceDet_four.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(5, 5),
+                                                  flags=cv2.CASCADE_SCALE_IMAGE)
+
         # Go over detected faces, stop at first detected face, return empty if no face.
         if len(face) == 1:
             facefeatures = face
@@ -168,7 +178,21 @@ class MainWindow:
             print("face Found using 3rd filter")
         elif len(face_four) == 1:
             facefeatures = face_four
-            print("face Found using final filter")
+            print("face Found using final")
+            # running filters again but on smaller scale
+        elif len(face_four) == 1:
+            facefeatures = face_one_one
+            print("face Found using 1st filter small min neighbours")
+        elif len(face_four) == 1:
+            facefeatures = face_two_one
+            print("face Found using 2nd filter small min neighbours")
+        elif len(face_four) == 1:
+            facefeatures = face_three_one
+            print("face Found using 3rd filter small min neighbours")
+        elif len(face_four) == 1:
+            facefeatures = face_four_one
+            print("face Found using final filter small min neighbours")
+
         else:
             facefeatures = ""
             print("Could Not Find Face in Image")
