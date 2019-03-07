@@ -57,38 +57,40 @@ class MainWindow:
         self.resultTxt.grid(columnspan=2, row=2, sticky=E + W)
 
     def make_test_sets(self):
-        training_data = []
-        training_labels = []
         prediction_data = []
         prediction_labels = []
         for emotion in emotions:
-            training, prediction = self.get_training_files(emotion)
-            # Append data to training and prediction list, and generate labels 0-7
-            for item in training:
-                image = cv2.imread(item)  # open image
-                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # convert to gray scale
-                training_data.append(gray)  # append image array to training data list
-                training_labels.append(emotions.index(emotion))
+            prediction = self.get_training_files(emotion)
             for item in prediction:  # repeat above process for prediction set
                 image = cv2.imread(item)
                 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                 prediction_data.append(gray)
                 prediction_labels.append(emotions.index(emotion))
 
-        return training_data, training_labels, prediction_data, prediction_labels
+        return prediction_data, prediction_labels
 
     def run_test_recognizer(self):
-        training_data, training_labels, prediction_data, prediction_labels = self.make_test_sets()
-        print("size of training set is:", len(training_labels), "images")
-        fishface.train(training_data, np.asarray(training_labels))
+        prediction_data, prediction_labels = self.make_test_sets()
+        print("size of training set is:", len(prediction_labels), "images")
+        if os.path.isfile(trainedModel):
+            fishface.read(trainedModel)
+        else:
+            print(".yml file not found. Training the FisherFace classifier")
+            self.saveTraining()
+            print("Saving new Training yml file")
+            fishface.read(trainedModel)
         cnt = 0
         correct = 0
         incorrect = 0
         total_distance = 0
         highest_pred = 0
 
-        for image in prediction_data:
-            pred, dist = fishface.predict(image)
+        for raw_image in prediction_data:
+            cv2.imwrite("working/training_RawImg.jpg", raw_image)
+            self.preProcess("working/training_RawImg.jpg", "working/training_ProcessedImg.jpg")
+            image = cv2.imread("working/training_ProcessedImg.jpg")
+            gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            pred, dist = fishface.predict(gray_image)
             if dist > highest_pred:
                 highest_pred = dist
                 print(str(highest_pred)   + " :highest Distance")
@@ -105,15 +107,21 @@ class MainWindow:
 
             print(total_distance, " : new total distance")
         avg_dist = total_distance/cnt
-        return ((100 * correct) / (correct + incorrect)),avg_dist
+        return ((100 * correct) / (correct + incorrect)), avg_dist
+
+    def get_training_files(self, emotion):  # Define function to get file list, randomly shuffle it and split 80/20
+        files = glob.glob("dataset_testing\\%s\\*" % emotion)
+        random.shuffle(files)
+        prediction = files[:int(len(files) * 1)]  # get first 80% of file list
+        return prediction
 
     def testAccuracy(self):
-        for i in range(0, 10):
-            correct, avg_dist = self.run_test_recognizer()
-            print("got", correct, "percent correct!")
-            print(avg_dist, " average distance")
-            self.metascore.append(correct)
-            self.distanceMeta.append(avg_dist)
+
+        correct, avg_dist = self.run_test_recognizer()
+        print("got", correct, "percent correct!")
+        print(avg_dist, " average distance")
+        self.metascore.append(correct)
+        self.distanceMeta.append(avg_dist)
         print("\n\nend score:", np.mean(self.metascore), "percent correct!")
         print("\n\nend score:", np.mean(self.distanceMeta), "average distance!")
         self.resultTxt.config(text=str(np.mean(self.metascore)) + " percent correct!", bg="gold")
@@ -251,13 +259,6 @@ class MainWindow:
         files = glob.glob("dataset\\%s\\*" % emotion)
         training = files[:int(len(files) * 1)]
         return training
-
-    def get_training_files(self, emotion):  # Define function to get file list, randomly shuffle it and split 80/20
-        files = glob.glob("dataset\\%s\\*" % emotion)
-        random.shuffle(files)
-        training = files[:int(len(files) * 0.8)]  # get first 80% of file list
-        prediction = files[-int(len(files) * 0.2):]  # get last 20% of file list
-        return training, prediction
 
     def run_recognizer(self):
 
