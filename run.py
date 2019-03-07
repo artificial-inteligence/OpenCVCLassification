@@ -18,6 +18,9 @@ emotions = ["anger", "disgust", "fear", "happy", "sadness", "surprise"]  # Emoti
 # need to run labeled tests to figure out what a reasonable threashold is for our dataset.
 # accuracy can be predicted from there
 # Labeled Tests Return values
+
+# 903 highet distance with shuffled sets
+
 # 61.96%    == 530 Distance      1% = 530/61.96 = 8.6   0% = 8.6*100 = 869
 # 58.4%     == 501 Distance      1% = 501/58.4  = 8.6
 fishFaceThreshold = 869
@@ -71,6 +74,7 @@ class MainWindow:
                 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                 prediction_data.append(gray)
                 prediction_labels.append(emotions.index(emotion))
+
         return training_data, training_labels, prediction_data, prediction_labels
 
     def run_test_recognizer(self):
@@ -80,22 +84,38 @@ class MainWindow:
         cnt = 0
         correct = 0
         incorrect = 0
+        total_distance = 0
+        highest_pred = 0
+
         for image in prediction_data:
-            pred, conf = fishface.predict(image)
+            pred, dist = fishface.predict(image)
+            if dist > highest_pred:
+                highest_pred = dist
+                print(str(highest_pred)   + " :highest Distance")
             if pred == prediction_labels[cnt]:
                 correct += 1
                 cnt += 1
+                print(dist, " distance added to total")
+                total_distance += dist
             else:
                 incorrect += 1
                 cnt += 1
-        return ((100 * correct) / (correct + incorrect))
+                print(dist, " distance added to total")
+                total_distance += dist
+
+            print(total_distance, " : new total distance")
+        avg_dist = total_distance/cnt
+        return ((100 * correct) / (correct + incorrect)),avg_dist
 
     def testAccuracy(self):
         for i in range(0, 10):
-            correct = self.run_test_recognizer()
+            correct, avg_dist = self.run_test_recognizer()
             print("got", correct, "percent correct!")
+            print(avg_dist, " average distance")
             self.metascore.append(correct)
+            self.distanceMeta.append(avg_dist)
         print("\n\nend score:", np.mean(self.metascore), "percent correct!")
+        print("\n\nend score:", np.mean(self.distanceMeta), "average distance!")
         self.resultTxt.config(text=str(np.mean(self.metascore)) + " percent correct!", bg="gold")
 
     def selectImage(self):
