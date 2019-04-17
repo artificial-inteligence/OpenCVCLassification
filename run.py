@@ -57,6 +57,7 @@ class MainWindow:
         self.resultTxt.grid(columnspan=2, row=2, sticky=E + W)
 
     def make_test_sets(self):
+        # organize the testing images dataset for modele testing
         prediction_data = []
         prediction_labels = []
         for emotion in emotions:
@@ -72,6 +73,7 @@ class MainWindow:
     def run_test_recognizer(self):
         prediction_data, prediction_labels = self.make_test_sets()
         print("size of training set is:", len(prediction_labels), "images")
+        # get trined model to test
         if os.path.isfile(trainedModel):
             fishface.read(trainedModel)
         else:
@@ -84,7 +86,7 @@ class MainWindow:
         incorrect = 0
         total_distance = 0
         highest_pred = 0
-
+        # iterate through test images and tally results
         for raw_image in prediction_data:
             cv2.imwrite("working/training_RawImg.jpg", raw_image)
             self.preProcess("working/training_RawImg.jpg", "working/training_ProcessedImg.jpg")
@@ -109,7 +111,8 @@ class MainWindow:
         avg_dist = total_distance/cnt
         return ((100 * correct) / (correct + incorrect)), avg_dist
 
-    def get_training_files(self, emotion):  # Define function to get file list, randomly shuffle it and split 80/20
+    def get_training_files(self, emotion):
+        # Define function to get file list, randomly shuffle it
         files = glob.glob("dataset_testing\\%s\\*" % emotion)
         random.shuffle(files)
         prediction = files[:int(len(files) * 1)]  # get first 80% of file list
@@ -127,7 +130,7 @@ class MainWindow:
         self.resultTxt.config(text=str(np.mean(self.metascore)) + " percent correct!", bg="gold")
 
     def selectImage(self):
-        print("clicked")
+        # select image
         pickedFile = askopenfilename(initialdir="/", title="Select file",
                                      filetypes=(("jpg files", "*.jpg"), ("all files", "*.*")))
         if pickedFile == "":
@@ -140,7 +143,7 @@ class MainWindow:
             self.resultTxt.config(text="Could Not Write Selected Image.", bg="red")
             self.updateImage(defaultImageLocation)
             return
-
+        # prepair the image
         processResult = self.preProcess(selectedImageLocation, preProcessedImageLocation)
         if processResult == "noFace":
             self.resultTxt.config(text="Could Not Process Image. No Face Found", bg="red")
@@ -284,7 +287,7 @@ class MainWindow:
     def saveTraining(self):
         training_data = []
         training_labels = []
-
+        # update the model
         for emotion in emotions:
             training = self.get_files(emotion)
             # Append data to training and prediction list with labels
