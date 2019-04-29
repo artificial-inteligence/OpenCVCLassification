@@ -118,7 +118,7 @@ class MainWindow:
         # Define function to get file list, randomly shuffle it
         files = glob.glob("dataset_testing\\%s\\*" % emotion)
         random.shuffle(files)
-        prediction = files[:int(len(files) * 1)]  # get first 80% of file list
+        prediction = files[:int(len(files) * 1)]
         return prediction
 
     def testAccuracy(self):
