@@ -8,6 +8,7 @@ import cv2.face
 import glob
 import numpy as np
 
+# HAAR filters used for face feature detection
 faceDet = cv2.CascadeClassifier("HAARFilters/haarcascade_frontalface_default.xml")
 faceDet_two = cv2.CascadeClassifier("HAARFilters/haarcascade_frontalface_alt2.xml")
 faceDet_three = cv2.CascadeClassifier("HAARFilters/haarcascade_frontalface_alt.xml")
@@ -15,11 +16,11 @@ faceDet_four = cv2.CascadeClassifier("HAARFilters/haarcascade_frontalface_alt_tr
 emotions = ["anger", "disgust", "fear", "happy", "sadness", "surprise"]  # Emotion list
 # number of components  0 is best, the default.   threashold = 1000 how big a distance you can have between results
 # and predictions before it returns -1 (fail) setting it to 1000 gives us 0 =100% confidence 1000 = 0% confidence.
-# need to run labeled tests to figure out what a reasonable threashold is for our dataset.
+# need to run labeled tests to figure out what a reasonable threashold is for our dataset....
 # accuracy can be predicted from there
 # Labeled Tests Return values
 
-# 903 highet distance with shuffled sets
+# 903 highest distance with shuffled sets
 
 # 61.96%    == 530 Distance      1% = 530/61.96 = 8.6   0% = 8.6*100 = 869
 # 58.4%     == 501 Distance      1% = 501/58.4  = 8.6
@@ -31,6 +32,7 @@ preProcessedImageLocation = "working/preProcessed.jpg"
 applicationTitle = "Emotion Recognition Helper"
 trainedModel = "working/trainedFisherFace.yml"
 
+# the  class that makes up th User interface
 class MainWindow:
     def __init__(self, master):
         self.metascore = []
@@ -55,9 +57,9 @@ class MainWindow:
 
         self.resultTxt = Label(root, text="Confidence: XY%", bg="green", fg="black", padx=self.normalPadding, pady=self.normalPadding,width=100)
         self.resultTxt.grid(columnspan=2, row=2, sticky=E + W)
-
+    #
     def make_test_sets(self):
-        # organize the testing images dataset for modele testing
+        # read and label the testing images for model testing
         prediction_data = []
         prediction_labels = []
         for emotion in emotions:
@@ -71,9 +73,10 @@ class MainWindow:
         return prediction_data, prediction_labels
 
     def run_test_recognizer(self):
+        # run the recognizer against the training images to return accuracy
         prediction_data, prediction_labels = self.make_test_sets()
         print("size of training set is:", len(prediction_labels), "images")
-        # get trined model to test
+        # get trined model to test or create one if not found
         if os.path.isfile(trainedModel):
             fishface.read(trainedModel)
         else:
@@ -86,7 +89,7 @@ class MainWindow:
         incorrect = 0
         total_distance = 0
         highest_pred = 0
-        # iterate through test images and tally results
+        # iterate through predictions and tally results
         for raw_image in prediction_data:
             cv2.imwrite("working/training_RawImg.jpg", raw_image)
             self.preProcess("working/training_RawImg.jpg", "working/training_ProcessedImg.jpg")
@@ -119,7 +122,7 @@ class MainWindow:
         return prediction
 
     def testAccuracy(self):
-
+        # onClick function: test the systems accuracy against the test dataSet
         correct, avg_dist = self.run_test_recognizer()
         print("got", correct, "percent correct!")
         print(avg_dist, " average distance")
@@ -259,12 +262,13 @@ class MainWindow:
                 print("Error, Passing File")
 
     def get_files(self, emotion):
+        # get training files form disk
         files = glob.glob("dataset\\%s\\*" % emotion)
         training = files[:int(len(files) * 1)]
         return training
 
     def run_recognizer(self):
-
+        # run the recognizer on the processed image
         prediction_image = cv2.imread(preProcessedImageLocation)
         prediction_gray = cv2.cvtColor(prediction_image, cv2.COLOR_BGR2GRAY)
         if os.path.isfile(trainedModel):
@@ -285,6 +289,7 @@ class MainWindow:
         return prediction, probability
 
     def saveTraining(self):
+        # update the trained model to the new DataSet (assuming files were manually added to it
         training_data = []
         training_labels = []
         # update the model
